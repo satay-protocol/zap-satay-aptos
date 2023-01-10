@@ -9,6 +9,8 @@ module satay_zap::satay_zap {
 
     use liquidswap::router_v2;
 
+    const ERR_POOL_DOESNT_EXIST: u64 = 1;
+
     public entry fun deposit<DepositCoin, BaseCoin, Curve>(user: &signer, vault_id: u64, amount: u64) {
         let deposit_coins = coin::withdraw<DepositCoin>(user, amount);
         let vault_coins = zap_deposit<DepositCoin, BaseCoin, Curve>(
@@ -46,6 +48,7 @@ module satay_zap::satay_zap {
         vault_id: u64,
         deposit_coins: Coin<DepositCoin>
     ): Coin<VaultCoin<BaseCoin>> {
+        assert!(router_v2::is_swap_exists<DepositCoin, BaseCoin, Curve>(), ERR_POOL_DOESNT_EXIST);
         let base_coins = router_v2::swap_exact_coin_for_coin<DepositCoin, BaseCoin, Curve>(
             deposit_coins,
             0
@@ -58,6 +61,7 @@ module satay_zap::satay_zap {
         vault_id: u64,
         vault_coins: Coin<VaultCoin<BaseCoin>>
     ): Coin<ResultCoin> {
+        assert!(router_v2::is_swap_exists<BaseCoin, ResultCoin, Curve>(), ERR_POOL_DOESNT_EXIST);
         let base_coins = satay::withdraw_as_user(user, vault_id, vault_coins);
         router_v2::swap_exact_coin_for_coin<BaseCoin, ResultCoin, Curve>(
             base_coins,
